@@ -1,0 +1,16 @@
+;;; Visual LISP 生成文件 [V1.0] CAD内部函数 saved to:[F:/ZQY/repo/LISP/算法] at:[8/11/22] 
+(PRV-DEF (:target . "CAD内部函数.VLX")
+	 (:active-x . T)
+	 (:separate-namespace)
+	 (:protected . T)
+	 (:load-file-list
+	   (:lsp "分解vlx.LSP")
+	   (:lsp "cad内部函数.lsp")
+	   (:fas "syz-vlx-path.fas")
+	 )
+	 (:require-file-list (:fas "syz-vlx-path.fas"))
+	 (:ob-directory)
+	 (:tmp-directory)
+	 (:optimization . lsa)
+)
+;; EOF

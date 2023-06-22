@@ -1,0 +1,50 @@
+(defun c:test (/ p FN ID OK)
+  (setq ok 2)
+  (if
+    (and
+      (setq fn (findfile "testDLG.dcl"))
+      (setq id (load_dialog fn))
+      (> id 0)
+    )
+    (progn
+      (setq p '(-1 -1))
+      
+      (while (> ok 1)
+	(new_dialog "Test" ID "" P)
+	(ACTION_TILE "K1" "(alert \"Test!\")")
+	(ACTION_TILE "K2" "(setq p (done_dialog 2))")
+	;(showlogo)
+	(setq ok (start_dialog))
+	_%ads-dlg-info%
+	;(dcl-call-back (cons "Test" (cons "Test" "Test")) "Test")
+        (cond
+	  ( (= ok 2)
+	    (getdist "请选取一点:")
+	  )
+        )
+      )
+      (unload_dialog id)
+    )
+    (alert "\n加载对话框失败!")
+  )
+  (princ)
+)
+
+(defun test (x y)
+  (princ (list x y))
+)
+
+(defun showlogo ()
+;;;  (start_image "Logo")
+;;;  (fill_image 0 0 (dimx_tile "Logo") (dimy_tile "Logo") -15)
+;;;  (foreach p (logo) 
+;;;    (setq x (car p))
+;;;    (setq y (cadr p))
+;;;    (setq c (caddr p))
+;;;    (fill_image x y 1 1 c)
+;;;  )
+;;;  (end_image)
+  (start_img "Logo" "d:\\temp\\1.jpg")
+  (start_img1 "d:\\temp\\1.jpg")
+)
+    

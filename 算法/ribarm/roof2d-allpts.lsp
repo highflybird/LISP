@@ -1,0 +1,248 @@
+(defun c:roof2d-allpts ( / *error* mid car-sort inside-p processtxtipl chksolution test chklili findlinesbetweentl collinear-p nCr findallpts findst1t2 cmde s ti lw lwx lwi pl tl ipt1t2t3l lil ll n )
+
+  (vl-load-com)
+
+  (defun *error* ( m )
+    (if cmde
+      (setvar 'cmdecho cmde)
+    )
+    (if (and lwi (not (vlax-erased-p lwi)))
+      (entdel lwi)
+    )
+    (if m
+      (prompt m)
+    )
+    (princ)
+  )
+
+  (defun mid ( p1 p2 )
+    (mapcar (function (lambda ( a b ) (/ (+ a b) 2.0))) p1 p2)
+  )
+
+  (defun car-sort ( lst cmp / rtn )
+    (setq rtn (car lst))
+    (foreach itm (cdr lst)
+      (if (apply cmp (list itm rtn))
+        (setq rtn itm)
+      )
+    )
+    rtn
+  )
+
+  (defun inside-p ( pt lw lwi )
+    (< (distance pt (vlax-curve-getclosestpointto lwi pt)) (distance pt (vlax-curve-getclosestpointto lw pt)))
+  )
+
+  (defun processtxtipl ( tl / ipl tl1 tl2 intt )
+    (setq tl1 tl tl2 tl)
+    (foreach t1 tl1
+      (foreach t2 (setq tl2 (cdr tl2))
+        (if (setq intt (inters (car t1) (polar (car t1) (angle (car t1) (cadr t1)) 1.0) (car t2) (polar (car t2) (angle (car t2) (cadr t2)) 1.0) nil))
+          (setq ipl (cons intt ipl))
+          (setq ipl (cons (angle (car t1) (cadr t1)) ipl))
+        )
+      )
+    )
+    ipl
+  )
+
+  (defun chksolution ( errli / allplanesips anglst )
+    (if (and (car errli) (cadr errli))
+      (progn
+        (setq allplanesips (processtxtipl tl))
+        (setq allplanesips (vl-remove-if (function (lambda ( x ) (vl-some (function (lambda ( y ) (equal x y 1e-6))) pl))) allplanesips))
+        (setq anglst (vl-remove-if (function listp) allplanesips))
+        (if (vl-some (function (lambda ( x ) (or (equal x 1e-8 1e-6) (equal x -1e-8 1e-6)))) anglst)
+          (setq anglst (cons 0.0 anglst) anglst (cons pi anglst) anglst (cons (* 2 pi) anglst))
+        )
+        (setq allplanesips (vl-remove-if-not (function listp) allplanesips))
+        (if (or
+              (vl-some (function (lambda ( x ) (or
+                                                 (equal (distance (car errli) (cadr errli)) (+ (distance (car errli) x) (distance x (cadr errli))) 1e-8)
+                                                 (equal (distance (car errli) x) (+ (distance (car errli) (cadr errli)) (distance (cadr errli) x)) 1e-8)
+                                                 (equal (distance (cadr errli) x) (+ (distance (cadr errli) (car errli)) (distance (car errli) x)) 1e-8)
+                                               )
+                                 )) allplanesips
+              )
+              (vl-some (function (lambda ( x ) (or (equal (angle (car errli) (cadr errli)) x 1e-8) (equal (angle (cadr errli) (car errli)) x 1e-8)))) anglst)
+              (vl-some (function (lambda ( x ) (collinear-p (car errli) (cadr errli) x))) pl)
+            )
+          t
+        )
+      )
+      t
+    )
+  )
+
+  (defun test nil
+    (and (not (vl-some (function (lambda ( x ) (and (not (vl-some (function (lambda ( y ) (inters (car x) (cadr x) (car y) (cadr y)))) lil)) (not (vl-some (function (lambda ( y ) (equal (distance (car y) (cadr y)) (+ (distance (car y) (polar (car x) (angle (car x) (cadr x)) 0.1)) (distance (polar (car x) (angle (car x) (cadr x)) 0.01) (cadr y))) 1e-6))) tl)) (inside-p (polar (car x) (angle (car x) (cadr x)) 0.01) lw lwi) (inside-p (polar (cadr x) (angle (cadr x) (car x)) 0.01) lw lwi)))) ll)) (vl-every (function (lambda ( li ) (chksolution li))) lil) (vl-every (function (lambda ( x ) (vl-some (function (lambda ( y ) (equal x y 1e-6))) (apply (function append) lil)))) pl) (not (vl-some (function (lambda ( li1 ) (vl-some (function (lambda ( li2 / ip ) (and (setq ip (inters (car li1) (cadr li1) (car li2) (cadr li2))) (not (equal ip (car li1) 1e-6)) (not (equal ip (cadr li1) 1e-6)) (not (equal ip (car li2) 1e-6)) (not (equal ip (cadr li2) 1e-6))))) (vl-remove li1 lil)))) lil)))
+  )
+
+  (defun chklili ( lil / lilpts )
+    (setq lilpts (apply (function append) lil))
+    (setq lilpts (vl-remove-if-not (function (lambda ( x ) (= (length (vl-remove-if (function (lambda (y) (equal x y 1e-6))) lilpts)) (- (length lilpts) 2)))) lilpts))
+    lilpts
+  )
+
+  (defun findlinesbetweentl ( tl / ll tl1 tl2 )
+    (setq tl1 tl tl2 tl)
+    (foreach t1 tl1
+      (foreach t2 (setq tl2 (cdr tl2))
+        (setq ll (cons (list (mid (car t1) (cadr t1)) (mid (car t2) (cadr t2))) ll))
+      )
+    )
+    ll
+  )
+
+  (defun collinear-p ( p1 p2 p3 )
+    (
+      (lambda ( a b c )
+        (or
+          (equal (+ a b) c 1e-10)
+          (equal (+ b c) a 1e-10)
+          (equal (+ c a) b 1e-10)
+        )
+      )
+      (distance p1 p2) (distance p2 p3) (distance p1 p3)
+    )
+  )
+
+  (defun nCr ( lst r )
+    (cond
+      ( (< r 2)
+        (mapcar (function list) lst)
+      )
+      ( lst
+        (append
+          (mapcar (function (lambda ( x ) (cons (car lst) x))) (nCr (cdr lst) (1- r)))
+          (nCr (cdr lst) r)
+        )
+      )
+    )
+  )
+
+  (defun findallpts ( tl / t1 t2 t3 ip12 ip23 s12 s121 s122 s23 s231 s232 ip d1 d2 ipl )
+    (foreach t1t2t3 (nCr tl 3)
+      (setq t1 (car t1t2t3) t2 (cadr t1t2t3) t3 (caddr t1t2t3))
+      (setq ip12 (inters (car t1) (cadr t1) (car t2) (cadr t2) nil) s12 nil)
+      (if ip12
+        (setq s121 (polar ip12 (angle ip12 (mid (polar ip12 (angle ip12 (car-sort t1 (function (lambda ( a b ) (> (distance ip12 a) (distance ip12 b)))))) 1.0) (polar ip12 (angle ip12 (car-sort t2 (function (lambda ( a b ) (> (distance ip12 a) (distance ip12 b)))))) 1.0))) 1.0) s122 (polar ip12 (angle ip12 (mid (polar ip12 (angle ip12 (car-sort t1 (function (lambda ( a b ) (> (distance ip12 a) (distance ip12 b)))))) -1.0) (polar ip12 (angle ip12 (car-sort t2 (function (lambda ( a b ) (> (distance ip12 a) (distance ip12 b)))))) 1.0))) 1.0))
+        (setq ip12 (mid (car t1) (car t2)) s12 (polar ip12 (angle (car t1) (cadr t1)) 1.0))
+      )
+      (setq ip23 (inters (car t2) (cadr t2) (car t3) (cadr t3) nil) s23 nil)
+      (if ip23
+        (setq s231 (polar ip23 (angle ip23 (mid (polar ip23 (angle ip23 (car-sort t2 (function (lambda ( a b ) (> (distance ip23 a) (distance ip23 b)))))) 1.0) (polar ip23 (angle ip23 (car-sort t3 (function (lambda ( a b ) (> (distance ip23 a) (distance ip23 b)))))) 1.0))) 1.0) s232 (polar ip23 (angle ip23 (mid (polar ip23 (angle ip23 (car-sort t2 (function (lambda ( a b ) (> (distance ip23 a) (distance ip23 b)))))) -1.0) (polar ip23 (angle ip23 (car-sort t3 (function (lambda ( a b ) (> (distance ip23 a) (distance ip23 b)))))) 1.0))) 1.0))
+        (setq ip23 (mid (car t2) (car t3)) s23 (polar ip23 (angle (car t2) (cadr t2)) 1.0))
+      )
+      (if (and s12 s23)
+        (progn
+          (setq ip (inters ip12 s12 ip23 s23 nil))
+          (if (and ip (inside-p ip lw lwi) (or (< (setq d1 (distance ip (inters ip (polar ip (+ (angle (car t1) (cadr t1)) (* 0.5 pi)) 1.0) (car t1) (cadr t1) nil))) (setq d2 (distance ip (vlax-curve-getclosestpointto lw ip)))) (equal d1 d2 1e-6)) (not (equal d1 0.0 1e-6)))
+            (setq ipl (cons (list ip t1 t2 t3) ipl))
+          )
+        )
+      )
+      (if (and s12 (not s23))
+        (progn
+          (setq ip (inters ip12 s12 ip23 s231 nil))
+          (if (and ip (inside-p ip lw lwi) (or (< (setq d1 (distance ip (inters ip (polar ip (+ (angle (car t1) (cadr t1)) (* 0.5 pi)) 1.0) (car t1) (cadr t1) nil))) (setq d2 (distance ip (vlax-curve-getclosestpointto lw ip)))) (equal d1 d2 1e-6)) (not (equal d1 0.0 1e-6)))
+            (setq ipl (cons (list ip t1 t2 t3) ipl))
+          )
+          (setq ip (inters ip12 s12 ip23 s232 nil))
+          (if (and ip (inside-p ip lw lwi) (or (< (setq d1 (distance ip (inters ip (polar ip (+ (angle (car t1) (cadr t1)) (* 0.5 pi)) 1.0) (car t1) (cadr t1) nil))) (setq d2 (distance ip (vlax-curve-getclosestpointto lw ip)))) (equal d1 d2 1e-6)) (not (equal d1 0.0 1e-6)))
+            (setq ipl (cons (list ip t1 t2 t3) ipl))
+          )
+        )
+      )
+      (if (and (not s12) s23)
+        (progn
+          (setq ip (inters ip12 s121 ip23 s23 nil))
+          (if (and ip (inside-p ip lw lwi) (or (< (setq d1 (distance ip (inters ip (polar ip (+ (angle (car t1) (cadr t1)) (* 0.5 pi)) 1.0) (car t1) (cadr t1) nil))) (setq d2 (distance ip (vlax-curve-getclosestpointto lw ip)))) (equal d1 d2 1e-6)) (not (equal d1 0.0 1e-6)))
+            (setq ipl (cons (list ip t1 t2 t3) ipl))
+          )
+          (setq ip (inters ip12 s122 ip23 s23 nil))
+          (if (and ip (inside-p ip lw lwi) (or (< (setq d1 (distance ip (inters ip (polar ip (+ (angle (car t1) (cadr t1)) (* 0.5 pi)) 1.0) (car t1) (cadr t1) nil))) (setq d2 (distance ip (vlax-curve-getclosestpointto lw ip)))) (equal d1 d2 1e-6)) (not (equal d1 0.0 1e-6)))
+            (setq ipl (cons (list ip t1 t2 t3) ipl))
+          )
+        )
+      )
+      (if (and (not s12) (not s23))
+        (progn
+          (setq ip (inters ip12 s121 ip23 s231 nil))
+          (if (and ip (inside-p ip lw lwi) (or (< (setq d1 (distance ip (inters ip (polar ip (+ (angle (car t1) (cadr t1)) (* 0.5 pi)) 1.0) (car t1) (cadr t1) nil))) (setq d2 (distance ip (vlax-curve-getclosestpointto lw ip)))) (equal d1 d2 1e-6)) (not (equal d1 0.0 1e-6)))
+            (setq ipl (cons (list ip t1 t2 t3) ipl))
+          )
+          (setq ip (inters ip12 s121 ip23 s232 nil))
+          (if (and ip (inside-p ip lw lwi) (or (< (setq d1 (distance ip (inters ip (polar ip (+ (angle (car t1) (cadr t1)) (* 0.5 pi)) 1.0) (car t1) (cadr t1) nil))) (setq d2 (distance ip (vlax-curve-getclosestpointto lw ip)))) (equal d1 d2 1e-6)) (not (equal d1 0.0 1e-6)))
+            (setq ipl (cons (list ip t1 t2 t3) ipl))
+          )
+          (setq ip (inters ip12 s122 ip23 s231 nil))
+          (if (and ip (inside-p ip lw lwi) (or (< (setq d1 (distance ip (inters ip (polar ip (+ (angle (car t1) (cadr t1)) (* 0.5 pi)) 1.0) (car t1) (cadr t1) nil))) (setq d2 (distance ip (vlax-curve-getclosestpointto lw ip)))) (equal d1 d2 1e-6)) (not (equal d1 0.0 1e-6)))
+            (setq ipl (cons (list ip t1 t2 t3) ipl))
+          )
+          (setq ip (inters ip12 s122 ip23 s232 nil))
+          (if (and ip (inside-p ip lw lwi) (or (< (setq d1 (distance ip (inters ip (polar ip (+ (angle (car t1) (cadr t1)) (* 0.5 pi)) 1.0) (car t1) (cadr t1) nil))) (setq d2 (distance ip (vlax-curve-getclosestpointto lw ip)))) (equal d1 d2 1e-6)) (not (equal d1 0.0 1e-6)))
+            (setq ipl (cons (list ip t1 t2 t3) ipl))
+          )
+        )
+      )
+    )
+    ipl
+  )
+
+  (defun findst1t2 ( t1 t2 / ip )
+    (if (setq ip (inters (car t1) (cadr t1) (car t2) (cadr t2) nil))
+      (list ip (angle ip (polar ip (angle ip (mid (polar ip (angle ip (car-sort t1 (function (lambda ( a b ) (> (distance ip a) (distance ip b)))))) 1.0) (polar ip (angle ip (car-sort t2 (function (lambda ( a b ) (> (distance ip a) (distance ip b)))))) 1.0))) 1.0)))
+      (list (mid (car t1) (car t2)) (angle (car t1) (cadr t1)))
+    )
+  )
+
+  (setq cmde (getvar 'cmdecho))
+  (setvar 'cmdecho 0)
+  (vl-cmdf "_.UNDO" "_BE")
+  (prompt "\nPick a closed polygonal LWPOLYLINE...")
+  (if (setq s (ssget "_+.:E:S" '((0 . "LWPOLYLINE") (-4 . "&=") (70 . 1) (-4 . "<not") (-4 . "<>") (42 . 0.0) (-4 . "not>"))))
+    (progn
+      (setq ti (car (_vl-times)))
+      (if (= 0 (getvar 'worlducs))
+        (vl-cmdf "_.UCS" "_W")
+      )
+      (setq lwx (entget (setq lw (ssname s 0))))
+      (setq lwi (vlax-vla-object->ename (car (vlax-invoke (vlax-ename->vla-object lw) 'offset 0.001))))
+      (if (< (vlax-curve-getarea lw) (vlax-curve-getarea lwi))
+        (progn
+          (entdel lwi)
+          (setq lwi (vlax-vla-object->ename (car (vlax-invoke (vlax-ename->vla-object lw) 'offset -0.001))))
+        )
+      )
+      (setq pl (mapcar (function (lambda ( p ) (mapcar (function +) (list 0 0) (trans p lw 0)))) (mapcar (function cdr) (vl-remove-if (function (lambda ( x ) (/= (car x) 10))) lwx))))
+      (setq tl (mapcar (function (lambda ( a b ) (list a b))) pl (append (cdr pl) (list (car pl)))))
+      (setq ipt1t2t3l (findallpts tl))
+      (foreach ipt1t2t3 ipt1t2t3l
+        (foreach p (vl-remove-if-not (function (lambda ( x ) (or ( (lambda ( y ) (or (equal (angle (car ipt1t2t3) x) y 1e-6) (equal (angle (car ipt1t2t3) x) (rem (+ y (* 0.5 pi)) (* 2.0 pi)) 1e-6) (equal (angle x (car ipt1t2t3)) y 1e-6) (equal (angle x (car ipt1t2t3)) (rem (+ y (* 0.5 pi)) (* 2.0 pi)) 1e-6))) (cadr (findst1t2 (cadr ipt1t2t3) (caddr ipt1t2t3)))) ( (lambda ( y ) (or (equal (angle (car ipt1t2t3) x) y 1e-6) (equal (angle (car ipt1t2t3) x) (rem (+ y (* 0.5 pi)) (* 2.0 pi)) 1e-6) (equal (angle x (car ipt1t2t3)) y 1e-6) (equal (angle x (car ipt1t2t3)) (rem (+ y (* 0.5 pi)) (* 2.0 pi)) 1e-6))) (cadr (findst1t2 (caddr ipt1t2t3) (cadddr ipt1t2t3)))) ( (lambda ( y ) (or (equal (angle (car ipt1t2t3) x) y 1e-6) (equal (angle (car ipt1t2t3) x) (rem (+ y (* 0.5 pi)) (* 2.0 pi)) 1e-6) (equal (angle x (car ipt1t2t3)) y 1e-6) (equal (angle x (car ipt1t2t3)) (rem (+ y (* 0.5 pi)) (* 2.0 pi)) 1e-6))) (cadr (findst1t2 (cadr ipt1t2t3) (cadddr ipt1t2t3))))))) (append pl (vl-remove (car ipt1t2t3) (mapcar (function car) ipt1t2t3l))))
+          (if (and p (not (vl-some (function (lambda ( x ) (or (equal (list p (car ipt1t2t3)) x 1e-6) (equal (list (car ipt1t2t3) p) x 1e-6)))) lil)))
+            (setq lil (cons (list p (car ipt1t2t3)) lil))
+          )
+        )
+        (entmake (list (cons 0 "CIRCLE") (cons 10 (car ipt1t2t3)) (cons 40 (distance (car ipt1t2t3) (inters (car ipt1t2t3) (polar (car ipt1t2t3) (+ (angle (caadr ipt1t2t3) (cadadr ipt1t2t3)) (* 0.5 pi)) 1.0) (caadr ipt1t2t3) (cadadr ipt1t2t3) nil))) (cons 62 2)))
+        (entmake (list (cons 0 "POINT") (cons 10 (car ipt1t2t3)) (cons 62 4)))
+      )
+      (setq ll (findlinesbetweentl tl))
+      (setq n (length pl))
+      (if (and (test) (not (chklili lil)) (<= n (length lil)))
+        (foreach li lil
+          (entmake (list (cons 0 "LINE") (cons 10 (car li)) (cons 11 (cadr li)) (cons 62 3)))
+        )
+        (progn
+          (prompt "\nNO SOLUTION FOUND...")
+          (foreach li lil
+            (entmake (list (cons 0 "LINE") (cons 10 (car li)) (cons 11 (cadr li)) (cons 62 1)))
+          )
+        )
+      )
+      (prompt "\nElapsed time : ") (princ (rtos (- (car (_vl-times)) ti) 2 16)) (prompt " milliseconds...")
+    )
+  )
+  (vl-cmdf "_.UNDO" "_E")
+  (*error* nil)
+)

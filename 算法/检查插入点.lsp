@@ -1,0 +1,20 @@
+(DEFUN C:CCRD ()
+  (INITGET 9)
+  (setq p (getpoint "\nÇëÊäÈëµã: "))
+  (setq p (trans p 1 0))
+  (if (setq sel (ssget '((0 . "INSERT"))))
+    (repeat (setq i (sslength sel))
+      (setq e (ssname sel (setq i (1- i))))
+      (setq o (vlax-ename->vla-object e))
+      (setq q (vlax-get o  'InsertionPoint))
+      (entmakex
+	(list
+	  (cons 0 "LINE")
+	  (cons 10 p)
+	  (cons 11 q)
+	)
+      )
+    )
+  )
+)
+      

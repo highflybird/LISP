@@ -1,0 +1,8 @@
+(defun f (a b c x y z)
+  (rem (+ (* x b c (rem (* b c) a))
+	  (* y a c (rem (* a c) b))
+	  (* z a b (rem (* a b) c))
+       )
+       (* a b c)
+  )
+)

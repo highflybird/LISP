@@ -1,0 +1,61 @@
+cons         2 
+symbol       3  
+string       4  
+stack        5 
+vector       6 
+fsubr        8
+xsubr        A  
+closure      B  
+box          C 
+wcons        D 
+location     E 
+ssubr        F                          
+nsubr        10    
+longnum      11   
+loscd        1F
+real         47
+lentity      48
+lselset      49
+lresb        4A
+lnode        ?? 
+                                 
+
+µØÖ·       ÐòºÅ  ·ûºÅ                                                              
+0E4DD070   304 ?ltid@box@@UAEFXZ      
+0E4DD040   305 ?ltid@closure@@UAEFXZ 
+0E4DCFF0   306 ?ltid@cons@@UAEFXZ     
+0E4E4F50   307 ?ltid@fsubr@@UAEFXZ    
+0E4DD170   308 ?ltid@lentity@@UAEFXZ  
+0E485810   309 ?ltid@lnode@@UAEFXZ    
+0E4DD160   310 ?ltid@location@@UAEFXZ 
+0E4DD030   311 ?ltid@longnum@@UAEFXZ  
+0E4DD060   312 ?ltid@loscd@@UAEFXZ    
+0E4DD080   313 ?ltid@lresb@@UAEFXZ    
+0E4DD180   314 ?ltid@lselset@@UAEFXZ  
+0E4DD000   315 ?ltid@nsubr@@UAEFXZ    
+0E4DD090   316 ?ltid@real@@UAEFXZ    
+0E4DD010   317 ?ltid@ssubr@@UAEFXZ    
+0E4DD050   318 ?ltid@stack@@UAEFXZ    
+0E4DCF90   319 ?ltid@string@@UAEFXZ   
+0E4DCF80   320 ?ltid@symbol@@UAEFXZ  
+0E4DCFA0   321 ?ltid@vector@@UAEFXZ   
+0E4DD190   322 ?ltid@wcons@@UAEFXZ    
+0E4DD020   323 ?ltid@xsubr@@UAEFXZ  
+  
+                    
+E485810:    ; <vl.?ltid@lnode@@UAEFXZ>   
+                       mov eax,ecx                                           
+                       and eax,FFFFF000                                      
+                       movzx edx,word ptr ds:[eax+4]                         
+                       test dx,dx                                            
+                       je E485824                                         
+                       movzx eax,dx                                          
+                       ret                                                   
+E485824: 
+                       mov edx,dword ptr ds:[eax]                            
+                       push ecx                                              
+                       mov ecx,eax                                           
+                       mov eax,dword ptr ds:[edx+8]                          
+                       call eax                                              
+                       movzx eax,ax                                          
+                       ret       

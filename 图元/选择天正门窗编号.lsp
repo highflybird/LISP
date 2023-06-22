@@ -1,0 +1,7 @@
+(defun c:kkk (/ mcbh filter ss0)
+  (setq mcbh (getstring "\n«Î ‰»Î√≈¥∞±‡∫≈:"))
+  (setq filter (list (cons 0 "TCH_OPENING") (cons 302 mcbh)))
+  (setq ss0 (ssget filter))
+  (setq ss (sssetfirst nil ss0))
+  (princ)
+)

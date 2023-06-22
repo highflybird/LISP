@@ -1,0 +1,12 @@
+(defun c:ttt (/ wcs code)
+  (or
+    (setq wcs (vlax-create-object "Aec32BitAppServer.AecScriptControl.1"))
+    (setq wcs (vlax-create-object "ScriptControl"))
+  )
+  (vlax-put-property wcs "language" "VBScript")
+  (setq	code "Function GetDays(t1,t2)\nGetDays = DateDiff(\"d\",t1,t2)\nEnd Function")
+  (vlax-invoke wcs 'addcode code)
+  (princ (vlax-invoke wcs 'run "GetDays" "1949-10-01" "2022-08-01"))
+  (vlax-release-object wcs)
+  (princ)
+)
